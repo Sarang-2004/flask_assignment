@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    command: python -u app.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      MONGO_URI: "mongodb://root:pass@db:27017/intern?authSource=admin"
+      JWT_SECRET_KEY: "jwtsecretkey"
+    networks:
+      - flask-mongo-net
+
+  db:
+    image: mongo:latest
+    hostname: db
+    environment:
+      - MONGO_INITDB_DATABASE=intern
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    ports:
+      - "27018:27017"
+    networks:
+      - flask-mongo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "mongodb://root:pass@localhost:27017/intern?authSource=admin", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+
+networks:
+  flask-mongo-net:
+    driver: bridge 
