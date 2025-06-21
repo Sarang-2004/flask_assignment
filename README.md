@@ -106,5 +106,3 @@ POST /auth/login
 
 ---
 
-## License
-MIT 

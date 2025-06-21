@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017/intern")
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "jwtsecretkey")
 
-# --- Swagger UI Configuration ---
+# adding swagger UI for easy testing of api end points
 app.config['SWAGGER'] = {
     'title': 'User Management API',
     'uiversion': 3,
@@ -27,11 +27,10 @@ app.config['SWAGGER'] = {
     'security': [{'Bearer': []}]
 }
 swagger = Swagger(app)
-# --------------------------------
 
 mongo = PyMongo(app)
 jwt = JWTManager(app)
-
+#login and access token
 @app.route('/auth/login', methods=['POST'])
 @swag_from({
     'tags': ['Authentication'],
@@ -90,6 +89,7 @@ def login():
         '409': {'description': 'Email already exists.'}
     }
 })
+#create user
 def create_user():
     data = request.get_json()
     name = data.get('name')
@@ -102,7 +102,7 @@ def create_user():
     hashed_password = generate_password_hash(password)
     user_id = mongo.db.users.insert_one({'name': name, 'email': email, 'password': hashed_password}).inserted_id
     return jsonify({'id': str(user_id), 'name': name, 'email': email}), 201
-
+#get all users
 @app.route('/users', methods=['GET'])
 @jwt_required()
 @swag_from({
@@ -117,6 +117,7 @@ def create_user():
         '200': {'description': 'A list of all users.'}
     }
 })
+#get all users
 def get_users():
     users = mongo.db.users.find()
     result = []
@@ -142,6 +143,7 @@ def get_users():
         '404': {'description': 'User not found.'}
     }
 })
+#get a single user
 def get_user(id):
     user = mongo.db.users.find_one({'_id': ObjectId(id)})
     if not user:
@@ -179,6 +181,7 @@ def get_user(id):
         '404': {'description': 'User not found.'}
     }
 })
+# update user details
 def update_user(id):
     data = request.get_json()
     name = data.get('name')
@@ -216,11 +219,13 @@ def update_user(id):
         '404': {'description': 'User not found.'}
     }
 })
+#delete user
 def delete_user(id):
     result = mongo.db.users.delete_one({'_id': ObjectId(id)})
     if result.deleted_count == 0:
         return jsonify({'msg': 'User not found'}), 404
     return jsonify({'msg': 'User deleted'}), 200
 
+# main function
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True) 
